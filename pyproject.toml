@@ -5,6 +5,8 @@ name = "Docutopus"
 files = [
     "main.py",
     "resources/logo.png",
+    "src/cv_utils.py",
+    "src/image_view.py",
     "src/main_window.py",
     "ui/main_window.ui",
 ]
