@@ -1,5 +1,4 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
 *.py[codz]
 *$py.class
 
@@ -216,3 +215,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# Python
+__pycache__/
+ui_*.py
+rc_*.py
+# Python byte code
+*.pyc
+*.res
+*.rc
+*.swap
+.qtcreator/
