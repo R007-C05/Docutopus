@@ -28,15 +28,142 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QWidget" name="widget" native="true">
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+     <widget class="QWidget" name="topToolbar" native="true">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <widget class="QPushButton" name="fitToWindowButton">
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Policy::Preferred</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>50</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="addImageButton">
+         <property name="styleSheet">
+          <string notr="true">border: none</string>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="icon">
-          <iconset theme="QIcon::ThemeIcon::ZoomFitBest"/>
+          <iconset theme="QIcon::ThemeIcon::ListAdd"/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="moveLeftButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::MediaSkipBackward"/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="cancelSelectionButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::WindowClose"/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="clearSelectionButton">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="selectectionModeButton">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="saveSelectionButton">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="moveRightButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::MediaSkipForward"/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="removeImageButton">
+         <property name="styleSheet">
+          <string notr="true">border: none</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::ListRemove"/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="saveButton">
+         <property name="maximumSize">
+          <size>
+           <width>50</width>
+           <height>100</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Save</string>
          </property>
         </widget>
        </item>
@@ -55,6 +182,16 @@
        </sizepolicy>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QPushButton" name="previousPageButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::GoPrevious"/>
+         </property>
+        </widget>
+       </item>
        <item>
         <spacer name="leftSpacer">
          <property name="orientation">
@@ -90,6 +227,16 @@
          </property>
          <property name="icon">
           <iconset theme="QIcon::ThemeIcon::ObjectRotateLeft"/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="fitToWindowButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::ZoomFitBest"/>
          </property>
         </widget>
        </item>
@@ -133,6 +280,16 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="nextPageButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::GoNext"/>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
