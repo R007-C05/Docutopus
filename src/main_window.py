@@ -1,8 +1,9 @@
 # This Python file uses the following encoding: utf-8
-from PySide6.QtWidgets import QMainWindow, QFileDialog, QPushButton
+from PySide6.QtWidgets import QMainWindow, QFileDialog, QMessageBox
 import qtawesome as qta
+from document_image_list import DocumentImageList
+from document_image import DocumentImage
 from ui_main_window import Ui_MainWindow
-import cv_utils
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -21,14 +22,26 @@ class MainWindow(QMainWindow):
 
         self.ui.actionScanImage.triggered.connect(self.open_file)
 
+        # Image transformations
         self.ui.rotateLButton.clicked.connect(lambda: self.ui.imageView.rotate_image(-1))
         self.ui.rotateRButton.clicked.connect(lambda: self.ui.imageView.rotate_image(+1))
         self.ui.fitToWindowButton.clicked.connect(self.ui.imageView.fit_to_window)
 
+        # Selection
         self.ui.selectectionModeButton.clicked.connect(self.toggle_selection_mode)
         self.ui.cancelSelectionButton.clicked.connect(self.toggle_selection_mode)
         self.ui.saveSelectionButton.clicked.connect(self.save_selection)
         self.ui.clearSelectionButton.clicked.connect(self.ui.imageView.clear_selection)
+
+        # Add / Remove page
+        self.ui.addImageButton.clicked.connect(self.open_file)
+        self.ui.removeImageButton.clicked.connect(self.remove_image)
+
+        # Page navigation
+        self.ui.nextPageButton.clicked.connect(self.next_page)
+        self.ui.previousPageButton.clicked.connect(self.previous_page)
+
+        self.image_list = DocumentImageList()
 
     def toggle_selection_buttons(self, selection_mode):
         if selection_mode:
@@ -52,5 +65,26 @@ class MainWindow(QMainWindow):
     def open_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "Scan Image", "", "Image Files (*.jpg *.jpeg *.png)")
         if path:
-            self.ui.imageView.load_image_from_file(path)
+            doc_image = DocumentImage.from_path(path)
+            if doc_image:
+                self.image_list.append(doc_image)
+                self.ui.imageView.load_new_image(doc_image)
+                return
+            QMessageBox.critical(self, "Error", "Failed to load image.")
 
+    def remove_image(self):
+        doc_image = self.image_list.remove()
+        if doc_image is None:
+            self.ui.imageView.clear_image()
+        else:
+            self.ui.imageView.load_new_image(doc_image)
+
+    def next_page(self):
+        image = self.image_list.next()
+        if image:
+            self.ui.imageView.load_new_image(image)
+
+    def previous_page(self):
+        image = self.image_list.previous()
+        if image:
+            self.ui.imageView.load_new_image(image)

@@ -1,8 +1,9 @@
 # This Python file uses the following encoding: utf-8
 
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsPolygonItem
-from PySide6.QtGui import QMouseEvent, QPixmap, QPen, QBrush, QPolygonF, QColor, QTransform
+from PySide6.QtGui import QPen, QBrush, QPolygonF, QColor
 from PySide6.QtCore import Qt, QPointF
+from document_image import DocumentImage
 import math
 
 class CornerHandle(QGraphicsEllipseItem):
@@ -35,7 +36,6 @@ class ImageView(QGraphicsView):
     _ZOOM_STEP = 1.1
 
     _SELECTION_COLOR = QColor(66, 238, 163)
-    _MAX_CORNERS = 4
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -47,22 +47,19 @@ class ImageView(QGraphicsView):
 
         self._zoom = 0
 
-        self.current_image = None
-        self.corners = []
+        self.current_image : DocumentImage | None = None
         self.marker_items = []
         self.polygon_item = None
 
-    def _ordered_corners(self):
-        if len(self.corners) < 3:
-            return self.corners
+    @staticmethod
+    def _order_corners(corners):
+        if len(corners) < 3:
+            return corners
 
-        cx = sum(p.x() for p in self.corners) / len(self.corners)
-        cy = sum(p.y() for p in self.corners) / len(self.corners)
+        cx = sum(p.x() for p in corners) / len(corners)
+        cy = sum(p.y() for p in corners) / len(corners)
 
-        return sorted(
-            self.corners,
-            key=lambda p: math.atan2(p.y() - cy, p.x() - cx)
-        )
+        return sorted(corners, key=lambda p: math.atan2(p.y() - cy, p.x() - cx))
 
     def fit_to_window(self):
         self.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
@@ -75,11 +72,11 @@ class ImageView(QGraphicsView):
             return
         self.selectionMode = True
 
-        if len(self.corners) > 0:
+        if len(self.current_image.corners) > 0:
             self.redraw_markers()
 
     def save_selection(self):
-        if not self.selectionMode or len(self.corners) < self._MAX_CORNERS:
+        if not self.selectionMode or len(self.current_image.corners) < DocumentImage.MAX_CORNERS:
             return
         self.clear_markers()
         self.selectionMode = False
@@ -87,53 +84,60 @@ class ImageView(QGraphicsView):
     def _reset_image(self, image):
         self.current_image = image
         self.scene.clear()
-        self.scene.addPixmap(self.current_image)
+        self.polygon_item = None
+
+        self.scene.addPixmap(self.current_image.pixmap())
         self.fit_to_window()
+        self._update_polygon()
 
 
-    def load_image_from_file(self, path):
-        self._reset_image(QPixmap(path))
+    def load_new_image(self, document_image):
+        self._reset_image(document_image)
 
     def clear_selection(self):
         self.clear_markers()
         self.scene.removeItem(self.polygon_item)
         self.polygon_item = None
-        self.corners.clear()
+        self.current_image.corners.clear()
 
-
-    def reload_image(self, pixmap=None):
-        if pixmap:
-            self.current_image = pixmap
+    def clear_image(self):
         self.scene.clear()
-        self.scene.addPixmap(self.current_image)
+        self.marker_items.clear()
+        self.polygon_item = None
+        self.current_image = None
+
+    def reload_image(self):
+        self.scene.clear()
+        self.scene.addPixmap(self.current_image.pixmap())
 
         self.marker_items.clear()
         self.polygon_item = None
-        if not self.selectionMode and len(self.corners) == self._MAX_CORNERS:
+        if not self.selectionMode and len(self.current_image.corners) == DocumentImage.MAX_CORNERS:
             self._update_polygon()
             return
         if not self.selectionMode:
-            self.corners.clear()
+            self.current_image.corners.clear()
             return
         self.redraw_markers()
 
 
     def redraw_markers(self):
-        new_corners = self.corners.copy()
-        self.corners.clear()
+        if self.current_image is None:
+            return
+        new_corners = self.current_image.corners.copy()
+        self.current_image.corners.clear()
         for corner in new_corners:
             self.add_corner(corner)
-
 
     def rotate_image(self, direction):
         if self.current_image is None:
             return
-        transform = QTransform().rotate(direction*90)
-        rotated = self.current_image.transformed(transform)
+
         w, h = self.current_image.width(), self.current_image.height()
+        self.current_image.rotate(direction)
 
         new_corners = []
-        for point in self.corners:
+        for point in self.current_image.corners:
             x, y = point.x(), point.y()
             if direction == 1:
                 new_x = h - y
@@ -145,8 +149,8 @@ class ImageView(QGraphicsView):
                 new_x, new_y = x, y
             new_corners.append(QPointF(new_x, new_y))
 
-        self.corners = new_corners
-        self.reload_image(rotated)
+        self.current_image.corners = new_corners
+        self.reload_image()
 
     def _zoom_image(self, event):
         if self.current_image is None:
@@ -167,10 +171,10 @@ class ImageView(QGraphicsView):
         self.scale(factor, factor)
 
     def _update_polygon(self):
-        if len(self.corners) < 2:
+        if len(self.current_image.corners) < 2 or self.current_image is None:
             return
 
-        ordered = self._ordered_corners()
+        ordered = ImageView._order_corners(self.current_image.corners)
         poly = QPolygonF(ordered)
         if self.polygon_item is None:
             self.polygon_item = QGraphicsPolygonItem()
@@ -184,11 +188,11 @@ class ImageView(QGraphicsView):
         self.polygon_item.setPolygon(poly)
 
     def add_corner(self, pos: QPointF):
-        if len(self.corners) >= self._MAX_CORNERS or not self.selectionMode:
+        if self.current_image is None or len(self.current_image.corners) >= DocumentImage.MAX_CORNERS or not self.selectionMode:
             return
-        self.corners.append(pos)
+        self.current_image.corners.append(pos)
         w, h = self.current_image.width(), self.current_image.height()
-        item = CornerHandle(len(self.corners) - 1, self, 20 * w/h)
+        item = CornerHandle(len(self.current_image.corners) - 1, self, 20 * w/h)
         item.setPos(pos)
         self.scene.addItem(item)
 
@@ -201,7 +205,7 @@ class ImageView(QGraphicsView):
         self.marker_items.clear()
 
     def handle_moved(self, index, new_pos):
-       self.corners[index] = new_pos
+       self.current_image.corners[index] = new_pos
        self._update_polygon()
 
     def mousePressEvent(self, event):

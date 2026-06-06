@@ -1,6 +1,7 @@
 # This Python file uses the following encoding: utf-8
 import cv2 as cv
-from PySide6.QtGui import QImage, QPixmap
+
+from PySide6.QtGui import QImage
 import numpy as np
 
 def binary_threshold(img):
@@ -18,19 +19,3 @@ def pixmap_to_cv(pixmap):
     arr = np.frombuffer(ptr, np.uint8).reshape((height, width, 4))
 
     return cv.cvtColor(arr, cv.COLOR_RGBA2BGR)
-
-def cv_to_pixmap(cv_img):
-    rgb = cv.cvtColor(cv_img, cv.COLOR_BGR2RGB)
-
-    h, w, ch = rgb.shape
-    bytes_per_line = ch * w
-
-    image = QImage(
-        rgb.data,
-        w,
-        h,
-        bytes_per_line,
-        QImage.Format_RGB888
-    )
-
-    return QPixmap.fromImage(image.copy())
