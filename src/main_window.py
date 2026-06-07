@@ -28,6 +28,7 @@ class MainWindow(QMainWindow):
         # Image transformations
         self.ui.rotateLButton.clicked.connect(lambda: self.ui.imageView.rotate_image(-1))
         self.ui.rotateRButton.clicked.connect(lambda: self.ui.imageView.rotate_image(+1))
+
         self.ui.fitToWindowButton.clicked.connect(self.ui.imageView.fit_to_window)
 
         # Selection

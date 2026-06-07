@@ -28,8 +28,40 @@ class DocumentImage:
     def is_rgb(self):
         return self._image_arr.ndim == 3 and self._image_arr.shape[2] == 3
 
+
+    def crop(self):
+        if not self.corners:
+            # Make the image corners the corners
+            return self._image_arr
+
+        pts_src = np.array([[p.x(), p.y()] for p in self.corners], dtype=np.float32)
+
+        # Compute output width and height
+        width_top = np.linalg.norm(pts_src[0] - pts_src[1])
+        width_bottom = np.linalg.norm(pts_src[3] - pts_src[2])
+        width = int(max(width_top, width_bottom))
+
+        height_left = np.linalg.norm(pts_src[0] - pts_src[3])
+        height_right = np.linalg.norm(pts_src[1] - pts_src[2])
+        height = int(max(height_left, height_right))
+
+        pts_dst = np.array([
+            [0, 0],
+            [width-1, 0],
+            [width-1, height-1],
+            [0, height-1]
+        ], dtype=np.float32)
+
+        # Perspective transform
+        M = cv.getPerspectiveTransform(pts_src, pts_dst)
+        cropped = cv.warpPerspective(self._image_arr, M, (width, height))
+
+        return cropped
+
+
     def pil_image(self):
-        arr = self._image_arr
+        arr = self.crop()
+
         if arr.dtype != np.uint8:
             arr = (arr * 255).clip(0, 255).astype(np.uint8)
 
