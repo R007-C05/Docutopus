@@ -1,10 +1,13 @@
 # This Python file uses the following encoding: utf-8
 import cv2 as cv
 from PySide6.QtGui import QImage, QPixmap
+import numpy as np
+from PIL import Image, ImageOps
 
 class DocumentImage:
     MAX_CORNERS = 4
 
+    A4_150DPI = (1240, 1754)
     @classmethod
     def from_path(cls, path):
         img = cv.imread(path, cv.IMREAD_COLOR)
@@ -15,6 +18,31 @@ class DocumentImage:
     def __init__(self, image_arr):
         self._image_arr = image_arr
         self.corners = []
+
+    def content(self):
+        return self._image_arr
+
+    def is_grayscale(self):
+        return self._image_arr.ndim == 2
+
+    def is_rgb(self):
+        return self._image_arr.ndim == 3 and self._image_arr.shape[2] == 3
+
+    def pil_image(self):
+        arr = self._image_arr
+        if arr.dtype != np.uint8:
+            arr = (arr * 255).clip(0, 255).astype(np.uint8)
+
+        if self.is_grayscale():
+            pil_image = Image.fromarray(arr).convert("RGB")
+        elif self.is_rgb() or arr.shape[2] == 4:
+           pil_image = Image.fromarray(cv.cvtColor(arr, cv.COLOR_BGR2RGB))
+           if pil_image.mode != "RGB":
+               pil_image = pil_image.convert("RGB")
+        else:
+            raise ValueError(f"Unsupported image shape: {arr.shape}")
+
+        return ImageOps.pad(pil_image, self.A4_150DPI, color=(255, 255, 255), method=Image.LANCZOS)
 
     def width(self):
         return self._image_arr.shape[1]
@@ -29,9 +57,9 @@ class DocumentImage:
             self._image_arr = cv.rotate(self._image_arr, cv.ROTATE_90_COUNTERCLOCKWISE)
 
     def pixmap(self):
-        if self._image_arr.ndim == 2:
+        if self.is_grayscale():
             qimage = self._grayscale_pixmap()
-        elif self._image_arr.ndim == 3 and self._image_arr.shape[2] == 3:
+        elif self.is_rgb():
             qimage = self._rgb_pixmap()
         else:
             raise ValueError(f"Unsupported image shape: {self._image_arr.shape}")

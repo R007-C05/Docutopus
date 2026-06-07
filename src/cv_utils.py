@@ -1,21 +1,22 @@
 # This Python file uses the following encoding: utf-8
 import cv2 as cv
 
-from PySide6.QtGui import QImage
-import numpy as np
-
 def binary_threshold(img):
     blur = cv.GaussianBlur(img, (5,5), 0)
     ret, th = cv.threshold(blur, 0, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)
     return th
 
-def pixmap_to_cv(pixmap):
-    image = pixmap.toImage().convertToFormat(QImage.Format_RGBA8888)
+def export_to_pdf(image_list, filename="output.pdf"):
+    pages = []
+    for img in image_list:
+        pil_image = img.pil_image()
+        pil_image.encoderinfo = {}
+        pil_image.format = "PNG"
+        pages.append(pil_image)
 
-    width = image.width()
-    height = image.height()
-
-    ptr = image.bits()
-    arr = np.frombuffer(ptr, np.uint8).reshape((height, width, 4))
-
-    return cv.cvtColor(arr, cv.COLOR_RGBA2BGR)
+    if not pages:
+        return
+    if len(pages) == 1:
+        pages[0].save(filename, format="PDF")
+    else:
+        pages[0].save(filename, format="PDF", save_all=True, append_images=pages[1:])

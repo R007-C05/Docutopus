@@ -66,6 +66,9 @@ class ImageView(QGraphicsView):
         self._zoom = 0
 
     def toggle_selection_mode(self):
+        if not self.current_image:
+            return
+
         if self.selectionMode:
             self.selectionMode = False
             self.reload_image()
@@ -119,7 +122,6 @@ class ImageView(QGraphicsView):
             self.current_image.corners.clear()
             return
         self.redraw_markers()
-
 
     def redraw_markers(self):
         if self.current_image is None:

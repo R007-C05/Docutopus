@@ -4,6 +4,7 @@ import qtawesome as qta
 from document_image_list import DocumentImageList
 from document_image import DocumentImage
 from ui_main_window import Ui_MainWindow
+import cv_utils
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -20,7 +21,9 @@ class MainWindow(QMainWindow):
         self.ui.clearSelectionButton.setIcon(qta.icon("fa5.square"))
         self.ui.selectectionModeButton.setIcon(qta.icon("ei.file-edit"))
 
-        self.ui.actionScanImage.triggered.connect(self.open_file)
+        self.ui.actionScanImage.triggered.connect(self.open_new_image)
+
+        self.image_list = DocumentImageList()
 
         # Image transformations
         self.ui.rotateLButton.clicked.connect(lambda: self.ui.imageView.rotate_image(-1))
@@ -34,14 +37,18 @@ class MainWindow(QMainWindow):
         self.ui.clearSelectionButton.clicked.connect(self.ui.imageView.clear_selection)
 
         # Add / Remove page
-        self.ui.addImageButton.clicked.connect(self.open_file)
+        self.ui.addImageButton.clicked.connect(self.add_image)
         self.ui.removeImageButton.clicked.connect(self.remove_image)
 
         # Page navigation
         self.ui.nextPageButton.clicked.connect(self.next_page)
         self.ui.previousPageButton.clicked.connect(self.previous_page)
 
-        self.image_list = DocumentImageList()
+        # Page ordering
+        self.ui.moveLeftButton.clicked.connect(self.move_page_left)
+        self.ui.moveRightButton.clicked.connect(self.move_page_right)
+
+        self.ui.saveButton.clicked.connect(self.export_pdf)
 
     def toggle_selection_buttons(self, selection_mode):
         if selection_mode:
@@ -62,7 +69,18 @@ class MainWindow(QMainWindow):
         self.ui.imageView.save_selection()
         self.toggle_selection_buttons(self.ui.imageView.selectionMode)
 
-    def open_file(self):
+    def open_new_image(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Scan Image", "", "Image Files (*.jpg *.jpeg *.png)")
+        if path:
+            doc_image = DocumentImage.from_path(path)
+            if doc_image:
+                self.image_list.clear()
+                self.image_list.append(doc_image)
+                self.ui.imageView.load_new_image(doc_image)
+                return
+            QMessageBox.critical(self, "Error", "Failed to load image.")
+
+    def add_image(self):
         path, _ = QFileDialog.getOpenFileName(self, "Scan Image", "", "Image Files (*.jpg *.jpeg *.png)")
         if path:
             doc_image = DocumentImage.from_path(path)
@@ -71,6 +89,15 @@ class MainWindow(QMainWindow):
                 self.ui.imageView.load_new_image(doc_image)
                 return
             QMessageBox.critical(self, "Error", "Failed to load image.")
+
+    def export_pdf(self):
+        if self.image_list.empty():
+            return
+        path, _ = QFileDialog.getSaveFileName(self, "Export PDF", "", "PDF Files (*.pdf)")
+        if path:
+            if not path.endswith(".pdf"):
+                path += ".pdf"
+            cv_utils.export_to_pdf(self.image_list, path)
 
     def remove_image(self):
         doc_image = self.image_list.remove()
@@ -88,3 +115,9 @@ class MainWindow(QMainWindow):
         image = self.image_list.previous()
         if image:
             self.ui.imageView.load_new_image(image)
+
+    def move_page_left(self):
+        self.image_list.move_up()
+
+    def move_page_right(self):
+        self.image_list.move_down()
