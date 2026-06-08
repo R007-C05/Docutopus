@@ -305,17 +305,29 @@
      <height>26</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuScan_Image">
+   <widget class="QMenu" name="menuScan">
     <property name="title">
      <string>Scan</string>
     </property>
-    <addaction name="actionScanImage"/>
+    <widget class="QMenu" name="menuNew_document">
+     <property name="title">
+      <string>New document...</string>
+     </property>
+     <addaction name="actionFrom_folder"/>
+     <addaction name="actionFrom_image"/>
+    </widget>
+    <addaction name="menuNew_document"/>
    </widget>
-   <addaction name="menuScan_Image"/>
+   <addaction name="menuScan"/>
   </widget>
-  <action name="actionScanImage">
+  <action name="actionFrom_image">
    <property name="text">
-    <string>Image</string>
+    <string>from image</string>
+   </property>
+  </action>
+  <action name="actionFrom_folder">
+   <property name="text">
+    <string>from folder</string>
    </property>
   </action>
  </widget>

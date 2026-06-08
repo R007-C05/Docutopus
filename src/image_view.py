@@ -194,7 +194,7 @@ class ImageView(QGraphicsView):
             return
         self.current_image.corners.append(pos)
         w, h = self.current_image.width(), self.current_image.height()
-        item = CornerHandle(len(self.current_image.corners) - 1, self, 20 * w/h)
+        item = CornerHandle(len(self.current_image.corners) - 1, self, 5 + 0.005 * min(w,h))
         item.setPos(pos)
         self.scene.addItem(item)
 

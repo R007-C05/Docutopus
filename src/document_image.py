@@ -30,6 +30,7 @@ class DocumentImage:
 
 
     def crop(self):
+        # TODO: Need to convert zoomed in points to real coordinates
         if not self.corners:
             # Make the image corners the corners
             return self._image_arr

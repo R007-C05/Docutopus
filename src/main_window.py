@@ -21,7 +21,8 @@ class MainWindow(QMainWindow):
         self.ui.clearSelectionButton.setIcon(qta.icon("fa5.square"))
         self.ui.selectectionModeButton.setIcon(qta.icon("ei.file-edit"))
 
-        self.ui.actionScanImage.triggered.connect(self.open_new_image)
+        self.ui.actionFrom_image.triggered.connect(self.open_new_image)
+        self.ui.actionFrom_folder.triggered.connect(self.open_new_directory)
 
         self.image_list = DocumentImageList()
 
@@ -81,6 +82,23 @@ class MainWindow(QMainWindow):
                 return
             QMessageBox.critical(self, "Error", "Failed to load image.")
 
+    def open_new_directory(self):
+        path = QFileDialog.getExistingDirectory(self, "Open Directory", "")
+        if path:
+            images = cv_utils.open_images_in_path(path)
+            if images:
+                self.image_list.clear()
+                doc_image = None
+                for image in images:
+                    doc_image = DocumentImage.from_path(image)
+                    if doc_image:
+                        self.image_list.append(doc_image)
+                if doc_image:
+                    self.ui.imageView.load_new_image(doc_image)
+                    return
+                QMessageBox.critical(self, "Error", "Failed to load image.")
+            QMessageBox.critical(self, "Error", "Failed to load folder.")
+
     def add_image(self):
         path, _ = QFileDialog.getOpenFileName(self, "Scan Image", "", "Image Files (*.jpg *.jpeg *.png)")
         if path:
@@ -101,6 +119,9 @@ class MainWindow(QMainWindow):
             cv_utils.export_to_pdf(self.image_list, path)
 
     def remove_image(self):
+        if self.ui.imageView.selectionMode:
+            self.toggle_selection_mode()
+
         doc_image = self.image_list.remove()
         if doc_image is None:
             self.ui.imageView.clear_image()
