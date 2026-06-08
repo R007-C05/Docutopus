@@ -112,6 +112,8 @@ class MainWindow(QMainWindow):
     def export_pdf(self):
         if self.image_list.empty():
             return
+        if self.ui.imageView.current_image:
+            self.ui.imageView.fit_to_window()
         path, _ = QFileDialog.getSaveFileName(self, "Export PDF", "", "PDF Files (*.pdf)")
         if path:
             if not path.endswith(".pdf"):

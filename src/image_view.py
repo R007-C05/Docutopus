@@ -216,7 +216,6 @@ class ImageView(QGraphicsView):
             self.add_corner(scene_pos)
         super().mousePressEvent(event)
 
-
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
             self._zoom_image(event)

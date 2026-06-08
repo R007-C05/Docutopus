@@ -3,6 +3,7 @@ import cv2 as cv
 from PySide6.QtGui import QImage, QPixmap
 import numpy as np
 from PIL import Image, ImageOps
+import cv_utils
 
 class DocumentImage:
     MAX_CORNERS = 4
@@ -10,7 +11,8 @@ class DocumentImage:
     A4_150DPI = (1240, 1754)
     @classmethod
     def from_path(cls, path):
-        img = cv.imread(path, cv.IMREAD_COLOR)
+        img = cv.imread(path, cv.IMREAD_GRAYSCALE)
+        img = cv_utils.binary_threshold(img)
         if img is None:
             return None
         return cls(img)
@@ -28,40 +30,59 @@ class DocumentImage:
     def is_rgb(self):
         return self._image_arr.ndim == 3 and self._image_arr.shape[2] == 3
 
-
-    def crop(self):
-        # TODO: Need to convert zoomed in points to real coordinates
+    def correct_perspective(self):
         if not self.corners:
-            # Make the image corners the corners
             return self._image_arr
 
-        pts_src = np.array([[p.x(), p.y()] for p in self.corners], dtype=np.float32)
+        page_corners = self.order_corners()
+        top_left, top_right, bottom_right, bottom_left = page_corners
 
-        # Compute output width and height
-        width_top = np.linalg.norm(pts_src[0] - pts_src[1])
-        width_bottom = np.linalg.norm(pts_src[3] - pts_src[2])
-        width = int(max(width_top, width_bottom))
+        width_top    = np.linalg.norm(top_right - top_left)
+        width_bottom = np.linalg.norm(bottom_right - bottom_left)
+        W = int(max(width_top, width_bottom))
 
-        height_left = np.linalg.norm(pts_src[0] - pts_src[3])
-        height_right = np.linalg.norm(pts_src[1] - pts_src[2])
-        height = int(max(height_left, height_right))
+        height_left  = np.linalg.norm(bottom_left - top_left)
+        height_right = np.linalg.norm(bottom_right - top_right)
+        H = int(max(height_left, height_right))
 
-        pts_dst = np.array([
-            [0, 0],
-            [width-1, 0],
-            [width-1, height-1],
-            [0, height-1]
+        perfect_square = np.array([
+            [0,     0    ],
+            [W - 1, 0    ],
+            [W - 1, H - 1],
+            [0,     H - 1],
         ], dtype=np.float32)
 
-        # Perspective transform
-        M = cv.getPerspectiveTransform(pts_src, pts_dst)
-        cropped = cv.warpPerspective(self._image_arr, M, (width, height))
+        M, _ = cv.findHomography(page_corners, perfect_square)
+        warped = cv.warpPerspective(self._image_arr, M, (W, H))
 
-        return cropped
+        return warped
+
+    def order_corners(self):
+        if not self.corners:
+            return []
+
+        pts = np.array([[p.x(), p.y()] for p in self.corners], dtype=np.float32)
+        pts = pts.reshape(4, 2).astype(np.float32)
+        ordered = np.zeros((4, 2), dtype=np.float32)
+
+        s = pts.sum(axis=1)
+
+        # top-left
+        ordered[0] = pts[np.argmin(s)]
+        # bottom-right
+        ordered[2] = pts[np.argmax(s)]
+
+        diff = np.diff(pts, axis=1)
+        # top-right
+        ordered[1] = pts[np.argmin(diff)]
+        # bottom-left
+        ordered[3] = pts[np.argmax(diff)]
+
+        return ordered
 
 
     def pil_image(self):
-        arr = self.crop()
+        arr = self.correct_perspective()
 
         if arr.dtype != np.uint8:
             arr = (arr * 255).clip(0, 255).astype(np.uint8)
