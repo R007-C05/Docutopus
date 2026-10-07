@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import QMainWindow, QFileDialog, QMessageBox
 import qtawesome as qta
 from document_image_list import DocumentImageList
-from document_image import DocumentImage
+from document_image import DocumentImage, ScanMode
 from ui_main_window import Ui_MainWindow
 import cv_utils
 
@@ -14,12 +14,21 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Docutopus")
         self.showMaximized()
 
+        self.scan_mode = ScanMode.Document
+        self.ui.ocrAddTextSelectionButton.hide()
+        self.ui.ocrRemoveTextSelectionButton.hide()
+
         self.selectionModeButtons = [self.ui.saveSelectionButton, self.ui.clearSelectionButton, self.ui.cancelSelectionButton]
         self.toggle_selection_buttons(self.ui.imageView.selectionMode)
 
         self.ui.saveSelectionButton.setIcon(qta.icon("mdi.check"))
         self.ui.clearSelectionButton.setIcon(qta.icon("fa5.square"))
-        self.ui.selectectionModeButton.setIcon(qta.icon("ei.file-edit"))
+        self.ui.selectionModeButton.setIcon(qta.icon("ei.file-edit"))
+        self.ui.ocrButton.setIcon(qta.icon("fa6.eye"))
+        self.ui.ocrAddTextSelectionButton.setIcon(qta.icon("mdi.selection-drag"))
+        self.ui.ocrRemoveTextSelectionButton.setIcon(qta.icon("mdi6.selection-remove"))
+
+        self.ui.ocrButton.clicked.connect(self.toggle_ocr_buttons)
 
         self.ui.actionFrom_image.triggered.connect(self.open_new_image)
         self.ui.actionFrom_folder.triggered.connect(self.open_new_directory)
@@ -33,7 +42,9 @@ class MainWindow(QMainWindow):
         self.ui.fitToWindowButton.clicked.connect(self.ui.imageView.fit_to_window)
 
         # Selection
-        self.ui.selectectionModeButton.clicked.connect(self.toggle_selection_mode)
+        self.ui.ocrAddTextSelectionButton.clicked.connect(self.ui.imageView.toggle_selection_mode)
+        self.ui.ocrRemoveTextSelectionButton.clicked.connect(self.ui.imageView.remove_last_selection)
+        self.ui.selectionModeButton.clicked.connect(self.toggle_selection_mode)
         self.ui.cancelSelectionButton.clicked.connect(self.toggle_selection_mode)
         self.ui.saveSelectionButton.clicked.connect(self.save_selection)
         self.ui.clearSelectionButton.clicked.connect(self.ui.imageView.clear_selection)
@@ -54,12 +65,12 @@ class MainWindow(QMainWindow):
 
     def toggle_selection_buttons(self, selection_mode):
         if selection_mode:
-            self.ui.selectectionModeButton.hide()
+            self.ui.selectionModeButton.hide()
             for btn in self.selectionModeButtons:
                 btn.show()
             return
 
-        self.ui.selectectionModeButton.show()
+        self.ui.selectionModeButton.show()
         for btn in self.selectionModeButtons:
             btn.hide()
 
@@ -71,14 +82,39 @@ class MainWindow(QMainWindow):
         self.ui.imageView.save_selection()
         self.toggle_selection_buttons(self.ui.imageView.selectionMode)
 
+    def toggle_ocr_buttons(self):
+        if self.scan_mode == ScanMode.Document:
+            self.scan_mode = ScanMode.OCR
+        else:
+            self.scan_mode = ScanMode.Document
+
+        self.ui.imageView.set_mode(self.scan_mode)
+        self.toggle_selection_buttons(self.ui.imageView.selectionMode)
+
+        if self.scan_mode == ScanMode.OCR:
+            self.ui.selectionModeButton.hide()
+            self.ui.ocrAddTextSelectionButton.show()
+            self.ui.ocrRemoveTextSelectionButton.show()
+            self.ui.ocrButton.setIcon(qta.icon("ph.eye-closed-light"))
+        else:
+            self.ui.selectionModeButton.show()
+            self.ui.ocrAddTextSelectionButton.hide()
+            self.ui.ocrRemoveTextSelectionButton.hide()
+            self.ui.ocrButton.setIcon(qta.icon("fa6.eye"))
+
+
     def open_new_image(self):
         path, _ = QFileDialog.getOpenFileName(self, "Scan Image", "", "Image Files (*.jpg *.jpeg *.png)")
         if path:
             doc_image = DocumentImage.from_path(path)
             if doc_image:
                 self.image_list.clear()
+                corner_list = cv_utils.find_corners_traditional(doc_image.content())
+                doc_image.set_corners(corner_list)
                 self.image_list.append(doc_image)
                 self.ui.imageView.load_new_image(doc_image)
+                if self.ui.imageView.current_image.scan_mode != self.scan_mode:
+                    self.toggle_ocr_buttons()
                 return
             QMessageBox.critical(self, "Error", "Failed to load image.")
 
@@ -91,10 +127,14 @@ class MainWindow(QMainWindow):
                 doc_image = None
                 for image in images:
                     doc_image = DocumentImage.from_path(image)
+                    corner_list = cv_utils.find_corners_traditional(doc_image.content())
+                    doc_image.set_corners(corner_list)
                     if doc_image:
                         self.image_list.append(doc_image)
                 if doc_image:
                     self.ui.imageView.load_new_image(doc_image)
+                    if self.ui.imageView.current_image.scan_mode != self.scan_mode:
+                        self.toggle_ocr_buttons()
                     return
                 QMessageBox.critical(self, "Error", "Failed to load image.")
             QMessageBox.critical(self, "Error", "Failed to load folder.")
@@ -104,8 +144,12 @@ class MainWindow(QMainWindow):
         if path:
             doc_image = DocumentImage.from_path(path)
             if doc_image:
+                corner_list = cv_utils.find_corners_traditional(doc_image.content())
+                doc_image.set_corners(corner_list)
                 self.image_list.append(doc_image)
                 self.ui.imageView.load_new_image(doc_image)
+                if self.ui.imageView.current_image.scan_mode != self.scan_mode:
+                    self.toggle_ocr_buttons()
                 return
             QMessageBox.critical(self, "Error", "Failed to load image.")
 
@@ -129,16 +173,22 @@ class MainWindow(QMainWindow):
             self.ui.imageView.clear_image()
         else:
             self.ui.imageView.load_new_image(doc_image)
+            if self.ui.imageView.current_image.scan_mode != self.scan_mode:
+                self.toggle_ocr_buttons()
 
     def next_page(self):
         image = self.image_list.next()
         if image:
             self.ui.imageView.load_new_image(image)
+            if self.ui.imageView.current_image.scan_mode != self.scan_mode:
+                self.toggle_ocr_buttons()
 
     def previous_page(self):
         image = self.image_list.previous()
         if image:
             self.ui.imageView.load_new_image(image)
+            if self.ui.imageView.current_image.scan_mode != self.scan_mode:
+                self.toggle_ocr_buttons()
 
     def move_page_left(self):
         self.image_list.move_up()

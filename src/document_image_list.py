@@ -11,6 +11,11 @@ class DocumentImageList:
         self._cursor = -1
         self._list.clear()
 
+    def current(self) -> DocumentImage | None:
+        if self.empty():
+            return None
+        return self._list[self._cursor]
+
     def next(self) -> DocumentImage | None:
         if self._cursor == len(self._list) - 1 or self._cursor == -1:
             return None

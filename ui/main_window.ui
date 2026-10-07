@@ -31,20 +31,11 @@
      <widget class="QWidget" name="topToolbar" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <spacer name="horizontalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Orientation::Horizontal</enum>
+        <widget class="QPushButton" name="ocrButton">
+         <property name="text">
+          <string/>
          </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Policy::Preferred</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>50</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
+        </widget>
        </item>
        <item>
         <spacer name="horizontalSpacer_2">
@@ -93,6 +84,20 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="ocrAddTextSelectionButton">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="ocrRemoveTextSelectionButton">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="clearSelectionButton">
          <property name="text">
           <string/>
@@ -100,7 +105,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="selectectionModeButton">
+        <widget class="QPushButton" name="selectionModeButton">
          <property name="text">
           <string/>
          </property>
