@@ -12,5 +12,8 @@ Para ejecutar el programa es necesario crear un entorno virtual de python e inst
 pip install -r requirements.txt
 
 ```
-
+Tras instalar las dependencias se ejecuta el programa con el intérprete de python del entorno virtual.
+```bash
+python main.py
+```
 
